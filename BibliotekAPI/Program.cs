@@ -143,18 +143,20 @@ namespace BibliotekAPI
 
             //Endpoints for loans
 
-            app.MapPost("/loans{id}", async (LibraryDbContext context, Book book, int id) =>
+            app.MapPost("/loans/user={userId}&book={bookId}", async (LibraryDbContext context, int bookId, int userId) =>
             {
-                if (book.IsAvailable)
+                var foundBook = await context.Books.FindAsync(bookId);
+
+                if (foundBook.IsAvailable)
                 {
                     var loan = new Loan
                     {
-                        BookId = book.Id,
-                        UserId = id,
+                        BookId = foundBook.Id,
+                        UserId = userId,
                         StartDate = DateTime.UtcNow,
                         EndDate = DateTime.UtcNow.AddDays(14) // 2 weeks loan period
                     };
-                    book.IsAvailable = false; // Mark the book as not available
+                    foundBook.IsAvailable = false; // Mark the book as not available
                     await context.Loans.AddAsync(loan);
                     await context.SaveChangesAsync();
                     return Results.Ok(loan);
@@ -167,10 +169,10 @@ namespace BibliotekAPI
             app.MapGet("/loans/active", async (LibraryDbContext context) =>
             {
                 var activeLoans = await context.Loans.
-                    Where(l => l.ReturnDate == null).
-                    Include(l => l.Book).
-                    Include(l => l.User).
-                    ToListAsync();
+                    Where(l => l.ReturnDate == null)
+                    .Include(l => l.Book)
+                    .Include(l => l.User)
+                    .ToListAsync();
 
                 if (activeLoans == null || activeLoans.Count == 0)
                 {
@@ -209,7 +211,8 @@ namespace BibliotekAPI
                 }
                 catch
                 {
-                    transaction.Rollback();
+                    // Both if or else complete the transaction, it is uneccessary.
+                    // transaction.Rollback();
                     return Results.BadRequest();
                 }
             });
