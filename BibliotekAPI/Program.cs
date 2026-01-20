@@ -90,7 +90,7 @@ namespace BibliotekAPI
 
             app.MapGet("/borrowers", async (LibraryDbContext context) =>
             {
-                var fetchedBorrowers = await context.Books.ToListAsync();
+                var fetchedBorrowers = await context.Users.ToListAsync();
 
                 return Results.Ok(fetchedBorrowers);
             });
@@ -141,58 +141,58 @@ namespace BibliotekAPI
 			});
 
 
-			//Endpoints for loans
+            //Endpoints for loans
 
-			app.MapPost("/loans", async (LibraryDbContext context, Book book, User user) =>
-			{
-				if (book.IsAvailable)
-				{
-					var loan = new Loan
-					{
-						BookId = book.Id,
-						UserId = user.Id,
-						StartDate = DateTime.UtcNow,
-						EndDate = DateTime.UtcNow.AddDays(14) // 2 weeks loan period
-					};
-					book.IsAvailable = false; // Mark the book as not available
-					await context.Loans.AddAsync(loan);
-					await context.SaveChangesAsync();
-					return Results.Ok(loan);
-				}
-				else
-					return Results.BadRequest("Book is not available for loan.");
-				
-			});
-
-			app.MapGet("/loans/active", async (LibraryDbContext context) =>
-			{
-				var activeLoans = await context.Loans.
-					Where(l => l.ReturnDate == null).
-					Include(l => l.Book).
-					Include(l => l.User).
-					ToListAsync();
-
-				if(activeLoans == null || activeLoans.Count == 0)
-				{
-					return Results.NotFound("No active loans found.");
+            app.MapPost("/loans{id}", async (LibraryDbContext context, Book book, int id) =>
+            {
+                if (book.IsAvailable)
+                {
+                    var loan = new Loan
+                    {
+                        BookId = book.Id,
+                        UserId = id,
+                        StartDate = DateTime.UtcNow,
+                        EndDate = DateTime.UtcNow.AddDays(14) // 2 weeks loan period
+                    };
+                    book.IsAvailable = false; // Mark the book as not available
+                    await context.Loans.AddAsync(loan);
+                    await context.SaveChangesAsync();
+                    return Results.Ok(loan);
                 }
-				else
-					return Results.Ok(activeLoans);
+                else
+                    return Results.BadRequest("Book is not available for loan.");
+
             });
 
-			app.MapPost("/loans/{id}/return", async (LibraryDbContext context, int loanId) =>
-			{
-                var foundLoan = await context.Loans.Where(l => l.Id == loanId)
-				.Include(b => b.Book)
-				.Include(u => u.User)
-				.FirstOrDefaultAsync();
+            app.MapGet("/loans/active", async (LibraryDbContext context) =>
+            {
+                var activeLoans = await context.Loans.
+                    Where(l => l.ReturnDate == null).
+                    Include(l => l.Book).
+                    Include(l => l.User).
+                    ToListAsync();
+
+                if (activeLoans == null || activeLoans.Count == 0)
+                {
+                    return Results.NotFound("No active loans found.");
+                }
+                else
+                    return Results.Ok(activeLoans);
+            });
+
+            app.MapPost("/loans/{id}/return", async (LibraryDbContext context, int id) =>
+            {
+                var foundLoan = await context.Loans.Where(l => l.Id == id)
+                .Include(b => b.Book)
+                .Include(u => u.User)
+                .FirstOrDefaultAsync();
 
                 var transaction = await context.Database.BeginTransactionAsync();
                 try
-				{
+                {
                     if (foundLoan == null)
                     {
-						transaction.Rollback();
+                        transaction.Rollback();
                         return Results.NotFound("Loan not found.");
                     }
                     else
@@ -207,14 +207,17 @@ namespace BibliotekAPI
                         return Results.Ok(foundLoan);
                     }
                 }
-				catch
-				{
-					transaction.Rollback();
-					return Results.BadRequest();
+                catch
+                {
+                    transaction.Rollback();
+                    return Results.BadRequest();
                 }
             });
 
+
             app.Run();
-		}
-	}
+
+
+        }
+    }
 }
