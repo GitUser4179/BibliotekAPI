@@ -72,6 +72,20 @@ namespace BibliotekAPI
 				return Results.Ok(fetchedBooks);
 			});
 
+			app.MapDelete("/books/{id}", async (LibraryDbContext context, int id) =>
+			{
+				// var fetchedBook = await context.Books.FirstOrDefaultAsync(b => b.Id == book.Id);
+				
+				if (await context.Books.FindAsync(id) is Book book)
+				{
+					context.Books.Remove(book);
+					await context.SaveChangesAsync();
+					return Results.NoContent();
+				};
+
+                return Results.NotFound();
+			});
+
 
 
 
