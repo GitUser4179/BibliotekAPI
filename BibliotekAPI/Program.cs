@@ -86,33 +86,63 @@ namespace BibliotekAPI
                 return Results.NotFound();
 			});
 
+            //Endpoints for borrowers - CRUD operations
+
+            app.MapGet("/borrowers", async (LibraryDbContext context) =>
+            {
+                var fetchedBorrowers = await context.Books.ToListAsync();
+
+                return Results.Ok(fetchedBorrowers);
+            });
+
+            app.MapGet("/borrowers/{id}", async (int id, LibraryDbContext context) =>
+            {
+                var borrower = await context.Users.FirstOrDefaultAsync(b => b.Id == id);
+                if (borrower == null)
+                {
+                    return Results.NotFound();
+                }
+                return Results.Ok(borrower);
+            });
+
+            app.MapPost("/borrowers", async (LibraryDbContext context, User newUser) =>
+            {
+                var added = await context.Users.AddAsync(newUser);
+
+				await context.SaveChangesAsync();
+				return Results.Ok(added.Entity);
+
+            });
+
+			app.MapPut("/borrowers", async (LibraryDbContext context, User user) =>
+			{
+				var fetchedUser = await context.Users.FirstOrDefaultAsync(b => b.Id == user.Id);
+				if (fetchedUser == null)
+				{
+					return Results.NotFound();
+				}
+				fetchedUser.Name = user.Name;
+				fetchedUser.Email = user.Email;
+				fetchedUser.Phone = user.Phone;
+				await context.SaveChangesAsync();
+				return Results.Ok(fetchedUser);
+
+            });
+			app.MapDelete("/borrowers/{id}", async (LibraryDbContext context, int id) =>
+			{
+				var borrower = await context.Users.FindAsync(id);
+				if (borrower == null)
+				{
+					return Results.NotFound();
+				}
+				context.Users.Remove(borrower);
+				await context.SaveChangesAsync();
+				return Results.NoContent();
+			});
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-			app.Run();
+            app.Run();
 		}
 	}
 }
