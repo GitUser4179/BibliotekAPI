@@ -80,21 +80,24 @@ namespace BibliotekAPI.Context
                     Id = 1,
                     Title = "Clean Code",
                     Author = "Robert C. Martin",
-                    ISBN = "9780132350884"
+                    ISBN = "9780132350884",
+                    IsAvailable = true
                 },
                 new Book
                 {
                     Id = 2,
                     Title = "The Pragmatic Programmer",
                     Author = "Andrew Hunt",
-                    ISBN = "9780201616224"
+                    ISBN = "9780201616224",
+                    IsAvailable = true
                 },
                 new Book
                 {
                     Id = 3,
                     Title = "Design Patterns",
                     Author = "Erich Gamma",
-                    ISBN = "9780201633610"
+                    ISBN = "9780201633610",
+                    IsAvailable = true
                 }
             );
 
